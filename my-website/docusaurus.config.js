@@ -16,7 +16,7 @@ const config = {
 
 
   plugins: [
-/*    [
+    [
       'redocusaurus',
       {
         specs: [
@@ -29,7 +29,7 @@ const config = {
           primaryColor: '#1890ff',
         },
       },
-    ],*/
+    ],
   ],
 
   presets: [
