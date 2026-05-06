@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="Definitions_18cejht" name="DRD" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <decision id="Decision_1o5l23l" name="Проверить допустимость перехода статусов">
+    <decisionTable id="DecisionTable_1x0vyax" hitPolicy="FIRST">
+      <input id="Input_1" label="Текущий статус" camunda:inputVariable="currentStatus">
+        <inputExpression id="InputExpression_1" typeRef="string">
+          <text>currentStatus</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_0fvlr6q">
+          <text>"Новый","Подтвержден","В работе","Собран","Отгружен","Доставлен","Завершен","Отменен","Возврат"</text>
+        </inputValues>
+      </input>
+      <input id="InputClause_0rhg4gg" label="Целевой статус" camunda:inputVariable="targetStatus">
+        <inputExpression id="LiteralExpression_1bxh1l5" typeRef="string">
+          <text>targetStatus</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_1ktwmny">
+          <text>"Подтвержден","В работе","Собран","Отгружен","Доставлен","Завершен","Отменен","Возврат"</text>
+        </inputValues>
+      </input>
+      <input id="InputClause_02rehin" label="Оплачен" camunda:inputVariable="isPaid">
+        <inputExpression id="LiteralExpression_03tidpo" typeRef="boolean">
+          <text>isPaid</text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" label="Переход" name="isAllowed" typeRef="boolean" />
+      <rule id="DecisionRule_0qtqyi3">
+        <inputEntry id="UnaryTests_0t5iit7">
+          <text>"Новый"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0cjylpz">
+          <text>"Подтвержден"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0z4hqu5">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0npzmfd">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0322fhm">
+        <inputEntry id="UnaryTests_0kioagm">
+          <text>"Подтвержден"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_127c0tl">
+          <text>"В работе"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1wyfu5k">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1j5phyy">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_10xyug3">
+        <inputEntry id="UnaryTests_1l0t9pp">
+          <text>"В работе"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0x8t7ox">
+          <text>"Собран"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0t2x3yk">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1ddorph">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1bifl4g">
+        <inputEntry id="UnaryTests_1un4mhz">
+          <text>"Собран"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0djsaaa">
+          <text>"Отгружен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0k5fiwp">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0dgjlfw">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1bxznaw">
+        <inputEntry id="UnaryTests_1smty8c">
+          <text>"Отгружен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_10q72wr">
+          <text>"Доставлен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1fsry8q">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1qozdym">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0b1pcs7">
+        <inputEntry id="UnaryTests_13g9vpo">
+          <text>"Доставлен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0o6hh72">
+          <text>"Завершен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0qumqhm">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0z3bhg1">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0k25smr">
+        <inputEntry id="UnaryTests_00vpbt5">
+          <text>"Новый"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1ui9lb4">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1t225vg">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_14ojtkb">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0zei1j1">
+        <inputEntry id="UnaryTests_1clwovc">
+          <text>"Подтвержден"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1sp8mmo">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_16w37nd">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0xerobf">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0ju0lyx">
+        <inputEntry id="UnaryTests_0n7b1qq">
+          <text>"В работе"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1awbcgk">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1srk4cu">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0l44f66">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_1iy6xtz">
+        <inputEntry id="UnaryTests_1hmalcb">
+          <text>"Собран"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_00ng9g0">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_185tc1r">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1wp7n80">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_020p7tx">
+        <description>"Заказ оплачен: отмена требует возврата/подтверждения"</description>
+        <inputEntry id="UnaryTests_1vrynss">
+          <text>"Новый"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0ndqef9">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_10yfiq5">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0f8q6xj">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_14bznba">
+        <description>"Заказ оплачен: отмена требует возврата/подтверждения"</description>
+        <inputEntry id="UnaryTests_0tcjd8i">
+          <text>"Подтвержден"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0bpaoat">
+          <text>"Отменен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0u5cfpk">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1ni1ue6">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0b8jl2p">
+        <inputEntry id="UnaryTests_0wthxjz">
+          <text>"Доставлен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0rpip4n">
+          <text>"Возврат"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_05d8348">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_1jm749g">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_13pvay8">
+        <inputEntry id="UnaryTests_1ktsfae">
+          <text>"Завершен"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0owqolo">
+          <text>"Возврат"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1e7fwv2">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0ht8efh">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_0ykcfnl">
+        <description>"Недопустимый переход статуса"</description>
+        <inputEntry id="UnaryTests_0voyple">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0sbts8t">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1wqmxrx">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_05ycuhk">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape id="Decision_1o5l23l_di" dmnElementRef="Decision_1o5l23l">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

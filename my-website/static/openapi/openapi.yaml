@@ -1,0 +1,963 @@
+openapi: 3.0.3
+info:
+  title: Order Status Sync OMS API (MVP)
+  version: 1.0.0
+  description: >
+    Спецификация API для системы управления заказами.
+    Покрывает экраны: реестр заказов (/orders), карточка заказа (/orders/{orderId}), управление каналами продаж (/channels).
+
+servers:
+  - url: https://example.com
+
+tags:
+  - name: Orders
+    description: Операции для работы с заказами (реестр и карточка заказа)
+  - name: OrderStatusHistory
+    description: История изменения статусов заказа
+  - name: Channels
+    description: Управление каналами продаж (подключение, состояние, удаление)
+  - name: ChannelHealth
+    description: Проверка доступности и корректности подключения канала
+
+paths:
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: Получить список заказов (реестр)
+      operationId: getOrders
+      parameters:
+        - name: from
+          in: query
+          description: Дата начала периода (включительно)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2026-04-01"
+        - name: to
+          in: query
+          description: Дата конца периода (включительно)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2026-04-16"
+        - name: channelId
+          in: query
+          description: Фильтр по каналу продаж
+          required: false
+          schema:
+            type: string
+          example: "ch_01"
+        - name: status
+          in: query
+          description: Фильтр по текущему статусу заказа
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+          example: "PACKED"
+        - name: q
+          in: query
+          description: Поиск по номеру заказа или ФИО клиента
+          required: false
+          schema:
+            type: string
+          example: "Иванов"
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: pageSize
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+          example: 20
+      responses:
+        '200':
+          description: Список заказов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    items:
+                      - id: "ord_9f8c1d2"
+                        number: "A-2026-000123"
+                        createdAt: "2026-04-16T12:30:00Z"
+                        updatedAt: "2026-04-16T13:10:00Z"
+                        channelId: "ch_01"
+                        customerId: "cust_01"
+                        totalAmount: 1990.0
+                        currency: "RUB"
+                        fulfillmentMethod: "DELIVERY"
+                        deliveryAddress: "Казань, ул. Красная, 1"
+                        currentStatus: "PACKED"
+                        statusSource: "SYSTEM"
+                        statusChangedAt: "2026-04-16T13:05:00Z"
+                        hasSyncIssue: false
+                        hasStatusConflict: true
+                        needsAttention: true
+                    page: 1
+                    pageSize: 20
+                    totalItems: 1
+                    totalPages: 1
+        '400':
+          description: Некорректные параметры запроса
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '500':
+          description: Внутренняя ошибка
+
+  /api/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Получить карточку заказа
+      operationId: getOrderById
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Идентификатор заказа
+          schema:
+            type: string
+          example: "ord_9f8c1d2"
+      responses:
+        '200':
+          description: Данные заказа для карточки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailsResponse'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    order:
+                      id: "ord_9f8c1d2"
+                      number: "A-2026-000123"
+                      createdAt: "2026-04-16T12:30:00Z"
+                      updatedAt: "2026-04-16T13:10:00Z"
+                      channelId: "ch_01"
+                      customerId: "cust_01"
+                      totalAmount: 1990.0
+                      currency: "RUB"
+                      fulfillmentMethod: "DELIVERY"
+                      deliveryAddress: "Казань, ул. Красная, 1"
+                      currentStatus: "PACKED"
+                      statusSource: "SYSTEM"
+                      statusChangedAt: "2026-04-16T13:05:00Z"
+                      hasSyncIssue: false
+                      hasStatusConflict: true
+                      needsAttention: true
+                    customer:
+                      id: "cust_01"
+                      fullName: "Иванов Иван"
+                      phone: "+7-900-000-00-00"
+                      email: "ivanov@example.com"
+                    channel:
+                      id: "ch_01"
+                      name: "Wildberries"
+                      type: "MARKETPLACE"
+                      enabled: true
+                      state: "ENABLED"
+                      lastSyncAt: "2026-04-16T13:00:00Z"
+                      lastSyncResult: "SUCCESS"
+                      lastError:
+                        code: null
+                        message: null
+                        occurredAt: null
+                      config:
+                        apiKey: "******"
+                        token: null
+                        url: "https://example.market/api"
+        '400':
+          description: Некорректный orderId
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка
+
+  /api/orders/{orderId}/status-history:
+    get:
+      tags: [OrderStatusHistory]
+      summary: Получить историю статусов заказа
+      operationId: getOrderStatusHistory
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Идентификатор заказа
+          schema:
+            type: string
+          example: "ord_9f8c1d2"
+      responses:
+        '200':
+          description: История статусов (массив)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusHistoryItem'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    - id: "hist_001"
+                      orderId: "ord_9f8c1d2"
+                      changedAt: "2026-04-16T12:40:00Z"
+                      status: "CONFIRMED"
+                      source: "CHANNEL"
+                      comment: null
+                      actor:
+                        type: "CHANNEL"
+                        name: "Wildberries"
+                    - id: "hist_002"
+                      orderId: "ord_9f8c1d2"
+                      changedAt: "2026-04-16T13:05:00Z"
+                      status: "PACKED"
+                      source: "SYSTEM"
+                      comment: "Статус обновлён оператором"
+                      actor:
+                        type: "USER"
+                        name: "Менеджер Мария"
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Заказ не найден
+        '500':
+          description: Внутренняя ошибка
+
+  /api/channels:
+    get:
+      tags: [Channels]
+      summary: Получить список каналов продаж
+      operationId: getChannels
+      responses:
+        '200':
+          description: Список каналов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelListResponse'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    items:
+                      - id: "ch_01"
+                        name: "Wildberries"
+                        type: "MARKETPLACE"
+                        enabled: true
+                        state: "ENABLED"
+                        lastSyncAt: "2026-04-16T13:00:00Z"
+                        lastSyncResult: "SUCCESS"
+                        lastError:
+                          code: null
+                          message: null
+                          occurredAt: null
+                        config:
+                          apiKey: "******"
+                          token: null
+                          url: "https://example.market/api"
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '500':
+          description: Внутренняя ошибка
+
+    post:
+      tags: [Channels]
+      summary: Подключить новый канал продаж
+      operationId: createChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChannelRequest'
+            examples:
+              example:
+                summary: Пример запроса
+                value:
+                  name: "Wildberries"
+                  type: "MARKETPLACE"
+                  config:
+                    apiKey: "******"
+                    token: null
+                    url: "https://example.market/api"
+      responses:
+        '201':
+          description: Канал создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    id: "ch_03"
+                    name: "Wildberries"
+                    type: "MARKETPLACE"
+                    enabled: false
+                    state: "DISABLED"
+                    lastSyncAt: null
+                    lastSyncResult: null
+                    lastError:
+                      code: null
+                      message: null
+                      occurredAt: null
+                    config:
+                      apiKey: "******"
+                      token: null
+                      url: "https://example.market/api"
+        '400':
+          description: Некорректное тело запроса
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '409':
+          description: Канал уже подключён (конфликт)
+        '500':
+          description: Внутренняя ошибка
+
+  /api/channels/{channelId}/status:
+    patch:
+      tags: [Channels]
+      summary: Изменить состояние канала (вкл/выкл)
+      operationId: updateChannelStatus
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          description: Идентификатор канала
+          schema:
+            type: string
+          example: "ch_01"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChannelStatusRequest'
+            examples:
+              example:
+                summary: Пример запроса
+                value:
+                  enabled: false
+      responses:
+        '200':
+          description: Состояние канала обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateChannelStatusResponse'
+              examples:
+                example:
+                  summary: Пример ответа
+                  value:
+                    id: "ch_01"
+                    enabled: false
+                    state: "DISABLED"
+        '400':
+          description: Некорректное тело запроса
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Канал не найден
+        '500':
+          description: Внутренняя ошибка
+
+  /api/channels/{channelId}:
+    delete:
+      tags: [Channels]
+      summary: Удалить канал продаж
+      operationId: deleteChannel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          description: Идентификатор канала
+          schema:
+            type: string
+          example: "ch_01"
+      responses:
+        '204':
+          description: Канал удалён (тело отсутствует)
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Канал не найден
+        '500':
+          description: Внутренняя ошибка
+
+  /api/channels/{channelId}/health:
+    get:
+      tags: [ChannelHealth]
+      summary: Проверить подключение канала (всегда 200 с результатом в теле)
+      operationId: checkChannelHealth
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          description: Идентификатор канала
+          schema:
+            type: string
+          example: "ch_01"
+      responses:
+        '200':
+          description: Результат проверки (OK/ERROR в теле)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelHealthCheckResult'
+              examples:
+                okExample:
+                  summary: Пример OK
+                  value:
+                    channelId: "ch_01"
+                    status: "OK"
+                    checkedAt: "2026-04-16T13:20:00Z"
+                    details:
+                      latencyMs: 320
+                      message: "Подключение активно, токен валиден"
+                errorExample:
+                  summary: Пример ERROR
+                  value:
+                    channelId: "ch_01"
+                    status: "ERROR"
+                    checkedAt: "2026-04-16T13:20:00Z"
+                    details:
+                      latencyMs: 5000
+                      message: "Таймаут при обращении к API канала"
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет прав
+        '404':
+          description: Канал не найден
+        '500':
+          description: Внутренняя ошибка
+
+components:
+  schemas:
+    OrderStatus:
+      type: string
+      enum: [NEW, CONFIRMED, IN_PROGRESS, PACKED, SHIPPED, DELIVERED, COMPLETED, CANCELLED, RETURNED]
+      example: PACKED
+
+    StatusSource:
+      type: string
+      enum: [CHANNEL, SYSTEM]
+      example: SYSTEM
+
+    ChannelType:
+      type: string
+      enum: [MARKETPLACE, WEBSITE]
+      example: MARKETPLACE
+
+    ChannelState:
+      type: string
+      enum: [ENABLED, DISABLED, ERROR]
+      example: ENABLED
+
+    FulfillmentMethod:
+      type: string
+      enum: [DELIVERY, PICKUP]
+      example: DELIVERY
+
+    SyncResult:
+      type: string
+      enum: [SUCCESS, FAILED]
+      example: SUCCESS
+
+    ActorType:
+      type: string
+      enum: [USER, SYSTEM, CHANNEL]
+      example: USER
+
+    HealthStatus:
+      type: string
+      enum: [OK, ERROR]
+      example: OK
+
+    Customer:
+      type: object
+      required: [id, fullName]
+      properties:
+        id:
+          type: string
+          example: cust_01
+        fullName:
+          type: string
+          example: Иванов Иван
+        phone:
+          type: string
+          nullable: true
+          example: "+7-900-000-00-00"
+        email:
+          type: string
+          nullable: true
+          example: ivanov@example.com
+      example:
+        id: cust_01
+        fullName: Иванов Иван
+        phone: "+7-900-000-00-00"
+        email: ivanov@example.com
+
+    ChannelError:
+      type: object
+      required: [code, message, occurredAt]
+      properties:
+        code:
+          type: string
+          nullable: true
+          example: null
+        message:
+          type: string
+          nullable: true
+          example: null
+        occurredAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+      example:
+        code: null
+        message: null
+        occurredAt: null
+
+    ChannelConfig:
+      type: object
+      description: Параметры подключения (набор зависит от типа канала)
+      properties:
+        apiKey:
+          type: string
+          nullable: true
+          example: "******"
+        token:
+          type: string
+          nullable: true
+          example: null
+        url:
+          type: string
+          nullable: true
+          example: "https://example.market/api"
+      example:
+        apiKey: "******"
+        token: null
+        url: "https://example.market/api"
+
+    Channel:
+      type: object
+      required: [id, name, type, enabled, state, lastError, config]
+      properties:
+        id:
+          type: string
+          example: ch_01
+        name:
+          type: string
+          example: Wildberries
+        type:
+          $ref: '#/components/schemas/ChannelType'
+        enabled:
+          type: boolean
+          example: true
+        state:
+          $ref: '#/components/schemas/ChannelState'
+        lastSyncAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-04-16T13:00:00Z"
+        lastSyncResult:
+          allOf:
+            - $ref: '#/components/schemas/SyncResult'
+          nullable: true
+          example: SUCCESS
+        lastError:
+          $ref: '#/components/schemas/ChannelError'
+        config:
+          $ref: '#/components/schemas/ChannelConfig'
+      example:
+        id: ch_01
+        name: Wildberries
+        type: MARKETPLACE
+        enabled: true
+        state: ENABLED
+        lastSyncAt: "2026-04-16T13:00:00Z"
+        lastSyncResult: SUCCESS
+        lastError:
+          code: null
+          message: null
+          occurredAt: null
+        config:
+          apiKey: "******"
+          token: null
+          url: "https://example.market/api"
+
+    Order:
+      type: object
+      required:
+        - id
+        - number
+        - createdAt
+        - updatedAt
+        - channelId
+        - customerId
+        - totalAmount
+        - currency
+        - fulfillmentMethod
+        - currentStatus
+        - statusSource
+        - statusChangedAt
+        - hasSyncIssue
+        - hasStatusConflict
+        - needsAttention
+      properties:
+        id:
+          type: string
+          example: ord_9f8c1d2
+        number:
+          type: string
+          example: A-2026-000123
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-04-16T12:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-16T13:10:00Z"
+        channelId:
+          type: string
+          example: ch_01
+        customerId:
+          type: string
+          example: cust_01
+        totalAmount:
+          type: number
+          example: 1990.0
+        currency:
+          type: string
+          example: RUB
+        fulfillmentMethod:
+          $ref: '#/components/schemas/FulfillmentMethod'
+        deliveryAddress:
+          type: string
+          nullable: true
+          example: "Казань, ул. Красная, 1"
+        currentStatus:
+          $ref: '#/components/schemas/OrderStatus'
+        statusSource:
+          $ref: '#/components/schemas/StatusSource'
+        statusChangedAt:
+          type: string
+          format: date-time
+          example: "2026-04-16T13:05:00Z"
+        hasSyncIssue:
+          type: boolean
+          example: false
+        hasStatusConflict:
+          type: boolean
+          example: true
+        needsAttention:
+          type: boolean
+          example: true
+      example:
+        id: ord_9f8c1d2
+        number: A-2026-000123
+        createdAt: "2026-04-16T12:30:00Z"
+        updatedAt: "2026-04-16T13:10:00Z"
+        channelId: ch_01
+        customerId: cust_01
+        totalAmount: 1990.0
+        currency: RUB
+        fulfillmentMethod: DELIVERY
+        deliveryAddress: "Казань, ул. Красная, 1"
+        currentStatus: PACKED
+        statusSource: SYSTEM
+        statusChangedAt: "2026-04-16T13:05:00Z"
+        hasSyncIssue: false
+        hasStatusConflict: true
+        needsAttention: true
+
+    ActorInfo:
+      type: object
+      required: [type, name]
+      properties:
+        type:
+          $ref: '#/components/schemas/ActorType'
+        name:
+          type: string
+          nullable: true
+          example: "Менеджер Мария"
+      example:
+        type: USER
+        name: "Менеджер Мария"
+
+    StatusHistoryItem:
+      type: object
+      required: [id, orderId, changedAt, status, source, actor]
+      properties:
+        id:
+          type: string
+          example: hist_001
+        orderId:
+          type: string
+          example: ord_9f8c1d2
+        changedAt:
+          type: string
+          format: date-time
+          example: "2026-04-16T13:05:00Z"
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        source:
+          $ref: '#/components/schemas/StatusSource'
+        comment:
+          type: string
+          nullable: true
+          example: "Статус обновлён оператором"
+        actor:
+          $ref: '#/components/schemas/ActorInfo'
+      example:
+        id: hist_001
+        orderId: ord_9f8c1d2
+        changedAt: "2026-04-16T13:05:00Z"
+        status: PACKED
+        source: SYSTEM
+        comment: "Статус обновлён оператором"
+        actor:
+          type: USER
+          name: "Менеджер Мария"
+
+    OrderListResponse:
+      type: object
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        totalItems:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 1
+      example:
+        items:
+          - id: "ord_9f8c1d2"
+            number: "A-2026-000123"
+            createdAt: "2026-04-16T12:30:00Z"
+            updatedAt: "2026-04-16T13:10:00Z"
+            channelId: "ch_01"
+            customerId: "cust_01"
+            totalAmount: 1990.0
+            currency: "RUB"
+            fulfillmentMethod: "DELIVERY"
+            deliveryAddress: "Казань, ул. Красная, 1"
+            currentStatus: "PACKED"
+            statusSource: "SYSTEM"
+            statusChangedAt: "2026-04-16T13:05:00Z"
+            hasSyncIssue: false
+            hasStatusConflict: true
+            needsAttention: true
+        page: 1
+        pageSize: 20
+        totalItems: 1
+        totalPages: 1
+
+    OrderDetailsResponse:
+      type: object
+      required: [order, customer, channel]
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        channel:
+          $ref: '#/components/schemas/Channel'
+      example:
+        order:
+          id: "ord_9f8c1d2"
+          number: "A-2026-000123"
+          createdAt: "2026-04-16T12:30:00Z"
+          updatedAt: "2026-04-16T13:10:00Z"
+          channelId: "ch_01"
+          customerId: "cust_01"
+          totalAmount: 1990.0
+          currency: "RUB"
+          fulfillmentMethod: "DELIVERY"
+          deliveryAddress: "Казань, ул. Красная, 1"
+          currentStatus: "PACKED"
+          statusSource: "SYSTEM"
+          statusChangedAt: "2026-04-16T13:05:00Z"
+          hasSyncIssue: false
+          hasStatusConflict: true
+          needsAttention: true
+        customer:
+          id: "cust_01"
+          fullName: "Иванов Иван"
+          phone: "+7-900-000-00-00"
+          email: "ivanov@example.com"
+        channel:
+          id: "ch_01"
+          name: "Wildberries"
+          type: "MARKETPLACE"
+          enabled: true
+          state: "ENABLED"
+          lastSyncAt: "2026-04-16T13:00:00Z"
+          lastSyncResult: "SUCCESS"
+          lastError:
+            code: null
+            message: null
+            occurredAt: null
+          config:
+            apiKey: "******"
+            token: null
+            url: "https://example.market/api"
+
+    ChannelListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Channel'
+      example:
+        items:
+          - id: "ch_01"
+            name: "Wildberries"
+            type: "MARKETPLACE"
+            enabled: true
+            state: "ENABLED"
+            lastSyncAt: "2026-04-16T13:00:00Z"
+            lastSyncResult: "SUCCESS"
+            lastError:
+              code: null
+              message: null
+              occurredAt: null
+            config:
+              apiKey: "******"
+              token: null
+              url: "https://example.market/api"
+
+    CreateChannelRequest:
+      type: object
+      required: [name, type, config]
+      properties:
+        name:
+          type: string
+          example: Wildberries
+        type:
+          $ref: '#/components/schemas/ChannelType'
+        config:
+          $ref: '#/components/schemas/ChannelConfig'
+      example:
+        name: Wildberries
+        type: MARKETPLACE
+        config:
+          apiKey: "******"
+          token: null
+          url: "https://example.market/api"
+
+    UpdateChannelStatusRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+          example: false
+      example:
+        enabled: false
+
+    UpdateChannelStatusResponse:
+      type: object
+      required: [id, enabled, state]
+      properties:
+        id:
+          type: string
+          example: ch_01
+        enabled:
+          type: boolean
+          example: false
+        state:
+          $ref: '#/components/schemas/ChannelState'
+      example:
+        id: ch_01
+        enabled: false
+        state: DISABLED
+
+    ChannelHealthDetails:
+      type: object
+      required: [message]
+      properties:
+        latencyMs:
+          type: integer
+          nullable: true
+          example: 320
+        message:
+          type: string
+          example: "Подключение активно, токен валиден"
+      example:
+        latencyMs: 320
+        message: "Подключение активно, токен валиден"
+
+    ChannelHealthCheckResult:
+      type: object
+      required: [channelId, status, checkedAt, details]
+      properties:
+        channelId:
+          type: string
+          example: ch_01
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        checkedAt:
+          type: string
+          format: date-time
+          example: "2026-04-16T13:20:00Z"
+        details:
+          $ref: '#/components/schemas/ChannelHealthDetails'
+      example:
+        channelId: ch_01
+        status: OK
+        checkedAt: "2026-04-16T13:20:00Z"
+        details:
+          latencyMs: 320
+          message: "Подключение активно, токен валиден"
