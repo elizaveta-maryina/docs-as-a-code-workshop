@@ -37,8 +37,8 @@ const config = {
       'classic',
       {
         docs: {
-          path: 'docs',
-          routeBasePath: 'docs',
+          //path: 'docs',
+          routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
 
           // Если хочешь кнопку "Edit this page" — замени на свой репо путь:
