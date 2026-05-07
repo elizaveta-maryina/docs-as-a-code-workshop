@@ -27,37 +27,51 @@ const config = {
   presets: [
     [
       'classic',
-      {
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
         docs: {
-          path: 'docs',
+          sidebarPath:'./sidebars.js',
           routeBasePath: 'docs',
-          sidebarPath: require.resolve('./sidebars.js'),
           editUrl:
             'https://github.com/elizaveta-maryina/docs-as-a-code-workshop/edit/main/my-website/',
           remarkPlugins: [simplePlantUML],
         },
         blog: false,
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: './src/css/custom.css',
         },
-      },
+      }),
     ],
-
     [
       'redocusaurus',
       {
-        specs: [{ id: 'oms', spec: 'docs/api/openapi.yaml' }],
-        theme: { primaryColor: '#1890ff' },
-      },
+        specs: [
+          {
+            id: 'oms',
+            spec: 'static/openapi/openapi.yaml',
+            route: 'docs/api/oms',
+          },
+        ],
+        theme: {
+          primaryColor: '#1890ff',
+        },
+      }
     ],
   ],
 
   themeConfig: {
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+
     navbar: {
-      title: 'Курсовой проект',
       items: [
         {
-          to: '/api/oms',
+          type: 'doc',
+          docId: 'intro',
+          position: 'left',
+          label: 'Документация',
+        },
+        {
+          to: 'docs/api/oms',
           label: 'API',
           position: 'left',
         },
