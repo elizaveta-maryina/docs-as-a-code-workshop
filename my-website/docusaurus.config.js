@@ -46,7 +46,7 @@ const config = {
     [
       'redocusaurus',
       {
-        specs: [{ id: 'oms', spec: 'openapi/openapi.yaml' }],
+        specs: [{ id: 'oms', spec: 'docs/api/openapi.yaml' }],
         theme: { primaryColor: '#1890ff' },
       },
     ],
@@ -56,6 +56,11 @@ const config = {
     navbar: {
       title: 'Курсовой проект',
       items: [
+        {
+          to: '/api/oms',
+          label: 'API',
+          position: 'left',
+        },
         {
           href: 'https://github.com/elizaveta-maryina/docs-as-a-code-workshop',
           label: 'GitHub',

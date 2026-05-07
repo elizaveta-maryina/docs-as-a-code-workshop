@@ -25,7 +25,10 @@ const sidebars = {
     {
       type: 'category',
       label: 'API',
-      items: ['api/openapi'],
+      items: [
+        'api/openapi',
+        { type: 'link', label: 'OpenAPI (Redoc)', href: '/api/oms' },
+      ],
     },
     {
       type: 'category',
