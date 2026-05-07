@@ -1,5 +1,6 @@
 const simplePlantUML = require('@akebifiky/remark-simple-plantuml');
 
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Курсовой проект',
@@ -29,7 +30,7 @@ const config = {
       {
         docs: {
           path: 'docs',
-          routeBasePath: 'docs', // если хочешь убрать 404 на корне — поменяем на '/'
+          routeBasePath: 'docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl:
             'https://github.com/elizaveta-maryina/docs-as-a-code-workshop/edit/main/my-website/',
@@ -45,7 +46,7 @@ const config = {
     [
       'redocusaurus',
       {
-        specs: [{ id: 'oms', spec: 'static/openapi/openapi.yaml' }],
+        specs: [{ id: 'oms', spec: 'openapi/openapi.yaml' }],
         theme: { primaryColor: '#1890ff' },
       },
     ],
@@ -55,8 +56,6 @@ const config = {
     navbar: {
       title: 'Курсовой проект',
       items: [
-        { to: '/docs-as-a-code-workshop/intro', label: 'Документация', position: 'left' },
-        { to: '/docs-as-a-code-workshop/api/oms', label: 'OpenAPI', position: 'left' },
         {
           href: 'https://github.com/elizaveta-maryina/docs-as-a-code-workshop',
           label: 'GitHub',
